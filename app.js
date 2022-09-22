@@ -1,52 +1,77 @@
 const express = require('express');
+const mongoose = require('mongoose');
 
-const movies = [
-  {
-    id: 1,
-    name: 'Avengers',
-    year: 2012,
-    rating: 8.1,
-  },
-  {
-    id: 2,
-    name: 'The Dark Knight',
-    year: 2008,
-    rating: 9,
-  },
-  {
-    id: 3,
-    name: 'Inception',
-    year: 2010,
-    rating: 8.8,
-  },
-];
+const app = express();
+app.use(express.json()); // middleware to parse body
 
-const server = express();
-server.use(express.json());
+// Connect to MongoDB
+mongoose.connect(
+  'mongodb+srv://sanjay:1234@cluster0.p2zwvyo.mongodb.net/?retryWrites=true&w=majority',
+  { useNewUrlParser: true, useUnifiedTopology: true }
+);
 
-server.get('/movies', (req, res) => {
-  res.status(200);
+mongoose.connection.on('connected', () => {
+  console.log('Connected to MongoDB');
+});
 
+// create collection movies
+const moviesSchema = new mongoose.Schema({
+  name: String,
+  year: Number,
+  rating: Number,
+}); // set of rules that defines the structure of the document
+const movieModel = mongoose.model('movies', moviesSchema);
+
+const userSchema = new mongoose.Schema({
+  email: String,
+  password: String,
+  name: String,
+});
+const usersModel = mongoose.model('users', userSchema);
+
+app.post('/users', (req, res) => {
+  const body = req.body;
+
+  usersModel.create(body);
+
+  res.status(201);
+  res.send('User created');
+});
+
+app.post('/movies', (req, res) => {
+  const body = req.body;
+
+  movieModel.create(body);
+
+  res.status(201);
   res.send({
-    message: 'Here are your movies my friend 😉',
+    message: 'Movie created' + body.name,
+  });
+});
+
+app.get('/movies', async (req, res) => {
+  const body = req.body;
+
+  const movies = await movieModel.find(body);
+
+  res.status(200);
+  res.send({
+    message: 'Movies fetched',
     data: movies,
   });
 });
 
-server.post('/movies', (req, res) => {
-  movies.push(req.body);
-  res.send('We have a new movie! ' + req.body.name);
+app.delete('/movies', async (req, res) => {
+  const body = req.body;
+
+  await movieModel.findByIdAndDelete(body.id);
+
+  res.status(200);
+  res.send({
+    message: 'Movie deleted',
+  });
 });
 
-server.delete('/movies', (req, res) => {
-  const id = req.query.id;
-  console.log(id);
+app.patch('/movie', () => {});
 
-  const index = movies.findIndex((movie) => movie.id === parseInt(id));
-
-  movies.splice(index, 1);
-
-  res.send('Movie deleted');
-});
-
-server.listen(4000);
+app.listen(4000, () => console.log('Server started on port 4000'));
