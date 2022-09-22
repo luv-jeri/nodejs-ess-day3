@@ -72,6 +72,17 @@ app.delete('/movies', async (req, res) => {
   });
 });
 
-app.patch('/movie', () => {});
+app.patch('/movies', async (req, res) => {
+  const body = req.body;
+
+  const id = body.id;
+
+  await movieModel.findByIdAndUpdate(id, body);
+
+  res.status(200);
+  res.send({
+    message: 'Movie updated',
+  });
+});
 
 app.listen(4000, () => console.log('Server started on port 4000'));
